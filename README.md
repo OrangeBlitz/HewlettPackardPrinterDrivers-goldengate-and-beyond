@@ -1,32 +1,31 @@
-# HewlettPackardPrinterDrivers-goldengate
-Repackage of HewlettPackardPrinterDrivers to support MacOS Golden Gate. 
-# HP LaserJet Professional P1102w Driver for macOS 27 Golden Gate
+# HP LaserJet P1102 / P1102w — macOS automatic-version patcher
 
-An unofficial, community-modified HP printer driver package adapted for **macOS 27 Golden Gate** and successfully tested.
+A community-made, double-clickable installer helper for legacy HP LaserJet drivers on macOS. It **downloads the original driver image directly from HP**, updates the version check in the installer package's `drivers/Distribution` file, builds a new `.pkg` locally, and opens the standard macOS Installer.
 
-This project builds on the work of [jackcheng](https://github.com/jackcheng/hp-p1102w-tahoe) and [Kartones](https://blog.kartones.net/post/macos-sequoia-hp-laserjet-p1102-drivers/) to make an older HP driver installer usable on newer macOS versions. Its primary target is the **HP LaserJet Professional P1102w**. The original HP package may contain drivers for additional models, but they have not been individually verified as part of this project.
+**This project does not include or redistribute any HP driver binaries.**
 
-## Compatibility
+## Installation (for end users)
 
-- **Target operating system:** macOS 27 Golden Gate.
-- **Primary printer:** HP LaserJet Professional P1102w.
-- **Installer version limit:** `28.0` (see below). This is a *maximum permitted OS version in the installer check*, **not** a claim of tested macOS 28 support.
+1. Download `Install_HP_LaserJet_AutoVersion.zip` from **Releases** on GitHub.
+2. Unzip it and double-click `Install_HP_LaserJet_AutoVersion.command`.
+3. If macOS blocks the unsigned script, review it before approving it in **System Settings → Privacy & Security**. Only run code that you trust.
+4. The script detects your macOS version, downloads the original HP DMG, patches and rebuilds the package, then opens the standard installer.
+5. Complete the installation. Open **System Settings → Printers & Scanners** and add your printer.
 
-> **Important:** Adjusting an installer version check enables installation; it does not by itself guarantee that the printer driver or every connection method works. Printing functionality should be tested on the target Mac.
+The generated package remains in `~/Downloads/` with a name such as `HewlettPackardPrinterDrivers-macOS-27-patched.pkg`. The patcher does not request administrator privileges; the system installer may ask for your password. An internet connection and sufficient free disk space are required.
 
-## Installation (using the prepared package)
+## Automatic macOS version detection
 
-1. Download the modified `.pkg` file from this project's release or download page.
-2. Double-click the `.pkg` file and follow the on-screen instructions. You may need an administrator password.
-3. Connect the printer via USB or ensure that it is reachable over the network.
-4. Open **System Settings → Printers & Scanners**, click **Add Printer, Scanner or Fax**, select your printer, and choose the installed HP driver if it is not selected automatically.
-5. Print a test page.
+The script reads the installed macOS version using `sw_vers -productVersion`, extracts its **major version**, and sets the installer version limit to the **next major version** (`major + 1`, followed by `.0`).
 
-If macOS blocks the package, check its origin before approving it through **System Settings → Privacy & Security**. Only install packages from sources you trust.
+| Detected macOS | Value written to `drivers/Distribution` |
+| --- | --- |
+| 26.x | `27.0` |
+| 27.0 / 27.x | `28.0` |
+| 28.0 / 28.x | `29.0` |
+| 29.x | `30.0` |
 
-## What was changed
-
-The `InstallationCheck()` function in the package's `Distribution` file was modified. **Both** occurrences of the macOS version value were set to `28.0`:
+Inside the expanded package, the script updates **exactly two** occurrences in `InstallationCheck()`, using `28.0` below only as an example for macOS 27:
 
 ```javascript
 function InstallationCheck(prefix) {
@@ -39,53 +38,24 @@ function InstallationCheck(prefix) {
 }
 ```
 
-The first `28.0` sets the installer's version ceiling. The second `28.0` is passed to the localized error message, so the displayed limit matches the actual check.
+This preserves the original `> 0` condition. The value is an **installation-version gate**, not a guarantee that the printer works under that macOS version. The script deliberately stops if the original package's `Distribution` file does not contain exactly one match for each of the two expected fields.
 
-**How the check behaves:** Because it rejects versions **greater than** `28.0`, macOS 27.x passes this particular check; `28.0` also passes, while versions above `28.0` are rejected. Passing this check is not equivalent to confirmed driver compatibility.
+## Known working configuration and limitations
 
-## Rebuilding the package yourself (optional)
-
-If you have the original `HewlettPackardPrinterDrivers.pkg` and want to reproduce the change:
-
-1. Open **Terminal** in the directory containing the `.pkg` file.
-2. Expand the installer:
-
-   ```bash
-   pkgutil --expand HewlettPackardPrinterDrivers.pkg drivers
-   ```
-
-3. Open `drivers/Distribution` in a text editor and update **both** version strings in `InstallationCheck()` as shown above. Save the file.
-4. Rebuild the installer:
-
-   ```bash
-   pkgutil --flatten drivers HewlettPackardPrinterDrivers-GoldenGate.pkg
-   ```
-
-5. Install the newly created `HewlettPackardPrinterDrivers-GoldenGate.pkg` using the instructions above.
-
-These commands assume the source package is named `HewlettPackardPrinterDrivers.pkg`. If you are starting from a differently named package, adjust the filename in the commands. Repacking a package can invalidate its original digital signature; verify the source before installing the result.
+- **HP LaserJet P1102/P1102w, macOS 27 Golden Gate:** the project maintainer reports successful printing **over USB** with the adapted driver. This is user-reported testing, not independent certification.
+- Printing over Wi-Fi and other connection types is **not verified** by this project.
+- Future macOS releases may require changes beyond an installer-version check, even if the script successfully generates a `.pkg`.
+- If HP removes or restructures the original installer, the script may stop. It does not use third-party mirrors.
+- The locally rebuilt `.pkg` is **not signed or notarized by HP or Apple**. Depending on macOS settings, installation may require additional approval.
+- This script does not disable Gatekeeper, change system security settings, or modify printer-driver binaries.
+- The script expects macOS 11 or newer and does not claim support for every included HP printer model.
 
 ## Credits and acknowledgements
 
-This project is based on prior community work:
-
-- **[Kartones](https://blog.kartones.net/post/macos-sequoia-hp-laserjet-p1102-drivers/)** — Documented how to unpack, modify, and rebuild the HP installer for macOS Sequoia and Tahoe, and shared an automation script. These instructions provided the technical basis for the version-check adjustment.
-- **[jackcheng](https://github.com/jackcheng/hp-p1102w-tahoe)** — Published a repackaged HP LaserJet P1102w driver for **macOS 26 Tahoe**. This package was the direct starting point for the Golden Gate adaptation.
-- **HP Inc.** — Developed the original printer drivers and installer.
-
-**macOS Golden Gate adaptation:** The version references in `InstallationCheck()` were updated to `28.0`, including both `system.compareVersions(...)` and `system.localizedStringWithFormat(...)`.
-
-Thanks to Kartones and jackcheng for helping users extend the useful life of older printers.
+- **[Kartones](https://blog.kartones.net/post/macos-sequoia-hp-laserjet-p1102-drivers/)** — for documenting the original HP LaserJet compatibility workaround and the approach to downloading, expanding and patching HP printer packages.
+- **[jackcheng](https://github.com/jackcheng/hp-p1102w-tahoe)** — for publishing and documenting the HP LaserJet P1102w community installer for macOS Tahoe, which inspired the Golden Gate adaptation.
+- **HP Inc.** — author and owner of the original printer driver software, which users download separately from HP's server.
 
 ## Disclaimer
 
-**This driver package is an unofficial community modification and is not developed, endorsed, or officially supported by HP Inc. or Apple Inc.** It is based on HP's original printer driver software, with modifications made by independent community contributors.
-
-**Use it at your own risk.** The package is provided **“as is”**, without warranties or guarantees of successful installation, printing functionality, compatibility, or security. To the extent permitted by applicable law, the maintainer and contributors accept no liability for any problems, damage, or data loss resulting from its installation or use.
-
-All trademarks belong to their respective owners. The original HP driver files remain subject to their applicable licence terms; this project does not claim ownership of them or grant any additional redistribution rights.
-
-## References
-
-- [Kartones — macOS Sequoia and Tahoe HP LaserJet P1102 drivers](https://blog.kartones.net/post/macos-sequoia-hp-laserjet-p1102-drivers/)
-- [jackcheng — hp-p1102w-tahoe](https://github.com/jackcheng/hp-p1102w-tahoe)
+**This is an unofficial community modification, not developed, endorsed, approved, or supported by HP Inc. or Apple Inc.** It is provided **“as is”**, without warranties of functionality, security or compatibility. Use it at your own risk. This project does not distribute HP printer-driver binaries; use of the original HP software remains subject to the applicable HP licence. HP and LaserJet are trademarks of their respective owners.

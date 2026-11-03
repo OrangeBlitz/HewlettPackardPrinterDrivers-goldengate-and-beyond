@@ -6,7 +6,7 @@ A community-made, double-clickable installer helper for legacy HP LaserJet drive
 
 ## Installation (for end users)
 
-1. Download `Install_HP_LaserJet_AutoVersion.zip` from **Releases** on GitHub.
+1. Download `Install_HP_LaserJet_AutoVersion.zip` from **[Releases](https://github.com/OrangeBlitz/HewlettPackardPrinterDrivers-goldengate-and-beyond/releases/tag/LaserJetP1102)** on GitHub.
 2. Unzip it and double-click `Install_HP_LaserJet_AutoVersion.command`.
 3. If macOS blocks the unsigned script, review it before approving it in **System Settings → Privacy & Security**. Only run code that you trust.
 4. The script detects your macOS version, downloads the original HP DMG, patches and rebuilds the package, then opens the standard installer.
